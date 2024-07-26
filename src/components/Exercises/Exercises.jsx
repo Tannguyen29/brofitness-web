@@ -14,6 +14,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  TablePagination,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -21,8 +22,18 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ExerciseForm from "./ExerciseForm";
 import * as s from "./Exercises.styles";
+import { styled } from "@mui/material/styles";
 
 const API_BASE_URL = "http://localhost:5000";
+
+const StyledTablePagination = styled(TablePagination)`
+  .MuiTablePagination-selectLabel,
+  .MuiTablePagination-displayedRows,
+  .MuiTablePagination-select,
+  .MuiTablePagination-actions {
+    font-size: 14px;
+  }
+`;
 
 const Exercises = () => {
   const [exercises, setExercises] = useState([]);
@@ -31,6 +42,8 @@ const Exercises = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     fetchExercises();
@@ -161,49 +174,63 @@ const Exercises = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {exercises.map((exercise) => (
-              <s.StyledTableRow key={exercise._id}>
-                <s.StyledTableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedItems.includes(exercise._id)}
-                    onChange={() => handleSelectItem(exercise._id)}
-                  />
-                </s.StyledTableCell>
-                <s.StyledTableCell>{exercise.name}</s.StyledTableCell>
-                <s.StyledTableCell>{exercise.bodyPart}</s.StyledTableCell>
-                <s.StyledTableCell>{exercise.equipment}</s.StyledTableCell>
-                <s.StyledTableCell>{exercise.difficulty}</s.StyledTableCell>
-                <s.StyledTableCell>{exercise.target}</s.StyledTableCell>
-                <s.StyledTableCell>
-                  {exercise.isBanned && (
-                    <Typography color="error">Banned</Typography>
-                  )}
-                  <IconButton onClick={(event) => handleMenuOpen(event, exercise._id)}>
-                    <MoreVertIcon />
-                  </IconButton>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={openMenuId === exercise._id}
-                    onClose={handleMenuClose}
-                  >
-                    <MenuItem onClick={() => {
-                      handleEdit(exercise);
-                      handleMenuClose();
-                    }}>
-                      Edit
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                      handleDelete(exercise._id);
-                      handleMenuClose();
-                    }}>
-                      Delete
-                    </MenuItem>
-                  </Menu>
-                </s.StyledTableCell>
-              </s.StyledTableRow>
-            ))}
+            {exercises
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((exercise) => (
+                <s.StyledTableRow key={exercise._id}>
+                  <s.StyledTableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedItems.includes(exercise._id)}
+                      onChange={() => handleSelectItem(exercise._id)}
+                    />
+                  </s.StyledTableCell>
+                  <s.StyledTableCell>{exercise.name}</s.StyledTableCell>
+                  <s.StyledTableCell>{exercise.bodyPart}</s.StyledTableCell>
+                  <s.StyledTableCell>{exercise.equipment}</s.StyledTableCell>
+                  <s.StyledTableCell>{exercise.difficulty}</s.StyledTableCell>
+                  <s.StyledTableCell>{exercise.target}</s.StyledTableCell>
+                  <s.StyledTableCell>
+                    {exercise.isBanned && (
+                      <Typography color="error">Banned</Typography>
+                    )}
+                    <IconButton onClick={(event) => handleMenuOpen(event, exercise._id)}>
+                      <MoreVertIcon />
+                    </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={openMenuId === exercise._id}
+                      onClose={handleMenuClose}
+                    >
+                      <MenuItem onClick={() => {
+                        handleEdit(exercise);
+                        handleMenuClose();
+                      }}>
+                        Edit
+                      </MenuItem>
+                      <MenuItem onClick={() => {
+                        handleDelete(exercise._id);
+                        handleMenuClose();
+                      }}>
+                        Delete
+                      </MenuItem>
+                    </Menu>
+                  </s.StyledTableCell>
+                </s.StyledTableRow>
+              ))}
           </TableBody>
         </Table>
+        <StyledTablePagination
+          rowsPerPageOptions={[5, 10, 20]}
+          component="div"
+          count={exercises.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(event, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
+        />
       </s.StyledTableContainer>
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <DialogContent>
