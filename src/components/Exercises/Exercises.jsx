@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { debounce } from 'lodash';
 import {
   Table,
   TableBody,
@@ -44,19 +45,29 @@ const Exercises = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchExercises();
-  }, []);
-
-  const fetchExercises = async () => {
+  const fetchExercises = useCallback(async (term) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/exercises`);
+      const response = await axios.get(`${API_BASE_URL}/exercises`, {
+        params: { search: term }
+      });
       setExercises(response.data);
     } catch (error) {
       console.error("Error fetching exercises:", error);
     }
-  };
+  }, []);  // Empty dependency array as it doesn't depend on any props or state
+
+  const debouncedFetchExercises = useCallback(
+    debounce((term) => {
+      fetchExercises(term);
+    }, 300),
+    [fetchExercises]
+  );
+
+  useEffect(() => {
+    debouncedFetchExercises(searchTerm);
+  }, [debouncedFetchExercises, searchTerm]);
 
   const handleAdd = () => {
     setSelectedExercise(null);
@@ -86,7 +97,7 @@ const Exercises = () => {
     if (window.confirm("Are you sure you want to delete this exercise?")) {
       try {
         await axios.delete(`${API_BASE_URL}/exercises/${id}`);
-        fetchExercises();
+        fetchExercises(searchTerm);
       } catch (error) {
         console.error("Error deleting exercise:", error);
       }
@@ -97,7 +108,7 @@ const Exercises = () => {
     if (window.confirm(`Are you sure you want to delete ${selectedItems.length} selected exercises?`)) {
       try {
         await Promise.all(selectedItems.map(id => axios.delete(`${API_BASE_URL}/exercises/${id}`)));
-        fetchExercises();
+        fetchExercises(searchTerm);
         setSelectedItems([]);
       } catch (error) {
         console.error("Error deleting selected exercises:", error);
@@ -106,7 +117,7 @@ const Exercises = () => {
   };
 
   const handleSave = () => {
-    fetchExercises();
+    fetchExercises(searchTerm);
   };
 
   const handleMenuOpen = (event, id) => {
@@ -117,6 +128,11 @@ const Exercises = () => {
   const handleMenuClose = () => {
     setAnchorEl(null);
     setOpenMenuId(null);
+  };
+
+  const handleSearchChange = (event) => {
+    const term = event.target.value;
+    setSearchTerm(term);
   };
 
   return (
@@ -139,7 +155,9 @@ const Exercises = () => {
           ) : (
             <>
               <s.SearchInput
-                placeholder="Search user..."
+                placeholder="Search exercise..."
+                value={searchTerm}
+                onChange={handleSearchChange}
                 startAdornment={
                   <InputAdornment position="start">
                     <SearchIcon />
