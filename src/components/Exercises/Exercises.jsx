@@ -183,11 +183,11 @@ const Exercises = () => {
                   onChange={handleSelectAll}
                 />
               </s.StyledTableHeaderCell>
-              <s.StyledTableHeaderCell>Name</s.StyledTableHeaderCell>
-              <s.StyledTableHeaderCell>Body Part</s.StyledTableHeaderCell>
-              <s.StyledTableHeaderCell>Equipment</s.StyledTableHeaderCell>
-              <s.StyledTableHeaderCell>Difficulty</s.StyledTableHeaderCell>
-              <s.StyledTableHeaderCell>Target</s.StyledTableHeaderCell>
+              <s.StyledTableHeaderCell className="name-column">Name</s.StyledTableHeaderCell>
+              <s.StyledTableHeaderCell className="bodypart-column">Body Part</s.StyledTableHeaderCell>
+              <s.StyledTableHeaderCell className="equipment-column">Equipment</s.StyledTableHeaderCell>
+              <s.StyledTableHeaderCell className="difficulty-column">Difficulty</s.StyledTableHeaderCell>
+              <s.StyledTableHeaderCell className="target-column">Target</s.StyledTableHeaderCell>
               <s.StyledTableHeaderCell>Actions</s.StyledTableHeaderCell>
             </TableRow>
           </TableHead>
@@ -202,11 +202,11 @@ const Exercises = () => {
                       onChange={() => handleSelectItem(exercise._id)}
                     />
                   </s.StyledTableCell>
-                  <s.StyledTableCell>{exercise.name}</s.StyledTableCell>
-                  <s.StyledTableCell>{exercise.bodyPart}</s.StyledTableCell>
-                  <s.StyledTableCell>{exercise.equipment}</s.StyledTableCell>
-                  <s.StyledTableCell>{exercise.difficulty}</s.StyledTableCell>
-                  <s.StyledTableCell>{exercise.target}</s.StyledTableCell>
+                  <s.StyledTableCell className="name-column">{exercise.name}</s.StyledTableCell>
+                  <s.StyledTableCell className="bodypart-column">{exercise.bodyPart}</s.StyledTableCell>
+                  <s.StyledTableCell className="equipment-column">{exercise.equipment}</s.StyledTableCell>
+                  <s.StyledTableCell className="difficulty-column">{exercise.difficulty}</s.StyledTableCell>
+                  <s.StyledTableCell className="target-column">{exercise.target}</s.StyledTableCell>
                   <s.StyledTableCell>
                     {exercise.isBanned && (
                       <Typography color="error">Banned</Typography>

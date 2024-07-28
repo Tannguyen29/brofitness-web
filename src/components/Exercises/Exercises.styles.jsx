@@ -30,12 +30,38 @@ export const AddButton = styled('button')({
 
 export const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   marginTop: theme.spacing(2),
-  borderRadius: '10px'
+  borderRadius: '10px',
+  tableLayout: 'fixed',
 }));
 
 export const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: 'bold',
-  backgroundColor: 'white'
+  backgroundColor: 'white',
+  '&.name-column': {
+    width: '300',
+    maxWidth: '270px',
+    minWidth: '270px',
+  },
+  '&.bodypart-column':{
+    width: '100px',
+    maxWidth: '100px',
+    minWidth: '100px',
+  },
+  '&.equipment-column':{
+    width: '100px',
+    maxWidth: '100px',
+    minWidth: '100px',
+  },
+  '&.difficulty-column':{
+    width: '100px',
+    maxWidth: '100px',
+    minWidth: '100px',
+  },
+  '&.target-column':{
+    width: '100px',
+    maxWidth: '100px',
+    minWidth: '100px',
+  }
 }));
 
 export const TableHeader = styled('div')({
@@ -73,4 +99,3 @@ export const StyledTableRow = styled(TableRow)(({ theme }) => ({
 export const ActionButton = styled(Button)(({ theme }) => ({
   marginRight: theme.spacing(1),
 }));
-
