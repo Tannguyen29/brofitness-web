@@ -56,7 +56,7 @@ const Exercises = () => {
     } catch (error) {
       console.error("Error fetching exercises:", error);
     }
-  }, []);  // Empty dependency array as it doesn't depend on any props or state
+  }, []); 
 
   const debouncedFetchExercises = useCallback(
     debounce((term) => {

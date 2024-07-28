@@ -1,10 +1,11 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Sidebar from './components/Navigation/Sidebar';
-import Exercises from './components/Exercises/Exercises';
-import Header from './components/Navigation/Header';
-import User from './components/User/User';
+import Sidebar from './components/Admin/Navigation/Sidebar';
+import Exercises from './components/Admin/Exercises/Exercises';
+import Header from './components/Admin/Navigation/Header';
+import User from './components/Admin/User/User';
+import PlanList from './components/Admin/Plan/PlanList';
 import styled, { createGlobalStyle } from 'styled-components';
 
 // Tạo một global style
@@ -23,7 +24,7 @@ const AppContainer = styled.div`
 `;
 
 const ContentContainer = styled.div`
-  margin-left: 400px; // Match the width of the sidebar
+  margin-left: 340px; // Match the width of the sidebar
   padding: 64px 20px 20px; // Add top padding to account for the fixed header
   flex-grow: 1;
 `;
@@ -39,6 +40,7 @@ function App() {
           <Routes>
             <Route path="/exercises" element={<Exercises />} />
             <Route path="/users" element={<User />} />
+            <Route path="/plans" element={<PlanList />} />
           </Routes>
         </ContentContainer>
       </AppContainer>
