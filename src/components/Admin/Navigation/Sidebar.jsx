@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleIcon from '@mui/icons-material/People';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const SidebarContainer = styled.nav`
   width: 240px;
@@ -108,6 +109,12 @@ const Sidebar = () => {
         </IconWrapper>
         Users
       </StyledNavLink>
+      <StyledNavLink to="/plans" className={location.pathname === "/plans" ? "active" : ""}>
+      <IconWrapper>
+        <CalendarTodayIcon />
+      </IconWrapper>
+      Plans
+    </StyledNavLink>
     </SidebarContainer>
   );
 };
