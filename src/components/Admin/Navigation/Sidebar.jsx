@@ -5,6 +5,7 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import MainLogo from '../../../image/Logo2.png'
 
 const SidebarContainer = styled.nav`
   width: 240px;
@@ -18,11 +19,15 @@ const SidebarContainer = styled.nav`
 `;
 
 const Logo = styled.div`
-  color: #4285F4;
-  font-size: 24px;
-  font-weight: bold;
+  display: flex;
+  justify-content: center;
   margin-bottom: 30px;
   padding: 0 20px;
+`;
+
+const LogoImage = styled.img`
+  width: 220px;
+  height: auto
 `;
 
 const UserInfo = styled.div`
@@ -62,7 +67,7 @@ const StyledNavLink = styled(Link)`
     padding: 12px;
   }
 
-  &:hover{
+  &:hover {
     background-color: #f0f2f4;
   }
 
@@ -86,7 +91,9 @@ const Sidebar = () => {
 
   return (
     <SidebarContainer>
-      <Logo>N.</Logo>
+      <Logo>
+      <LogoImage src={MainLogo} alt="Logo" />
+      </Logo>
       <UserInfo>
         {/* <Avatar src="path_to_avatar_image.jpg" alt="User Avatar" /> */}
         <Username>Jaydon Frankie</Username>
@@ -110,11 +117,11 @@ const Sidebar = () => {
         Users
       </StyledNavLink>
       <StyledNavLink to="/plans" className={location.pathname === "/plans" ? "active" : ""}>
-      <IconWrapper>
-        <CalendarTodayIcon />
-      </IconWrapper>
-      Plans
-    </StyledNavLink>
+        <IconWrapper>
+          <CalendarTodayIcon />
+        </IconWrapper>
+        Plans
+      </StyledNavLink>
     </SidebarContainer>
   );
 };
