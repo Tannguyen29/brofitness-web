@@ -6,6 +6,7 @@ import Exercises from './components/Admin/Exercises/Exercises';
 import Header from './components/Admin/Navigation/Header';
 import User from './components/Admin/User/User';
 import PlanList from './components/Admin/Plan/PlanList';
+import Banner from './components/Admin/banner/BannerList'
 import styled, { createGlobalStyle } from 'styled-components';
 
 // Tạo một global style
@@ -41,6 +42,7 @@ function App() {
             <Route path="/exercises" element={<Exercises />} />
             <Route path="/users" element={<User />} />
             <Route path="/plans" element={<PlanList />} />
+            <Route path="/banner" element={<Banner />} />
           </Routes>
         </ContentContainer>
       </AppContainer>

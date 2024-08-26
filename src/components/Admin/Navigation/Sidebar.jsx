@@ -5,6 +5,7 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import MainLogo from '../../../image/Logo2.png'
 
 const SidebarContainer = styled.nav`
@@ -121,6 +122,12 @@ const Sidebar = () => {
           <CalendarTodayIcon />
         </IconWrapper>
         Plans
+      </StyledNavLink>
+      <StyledNavLink to="/banner" className={location.pathname === "/banner" ? "active" : ""}>
+        <IconWrapper>
+          <FormatListBulletedIcon />
+        </IconWrapper>
+        banner
       </StyledNavLink>
     </SidebarContainer>
   );
