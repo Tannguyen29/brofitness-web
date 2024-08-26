@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useDropzone } from 'react-dropzone';
+import imageCompression from 'browser-image-compression';
 import {
   TextField,
   Button,
@@ -14,6 +16,7 @@ import {
   Paper,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { MuiColorInput } from 'mui-color-input';
 
 const FormContainer = styled("form")({
   display: "flex",
@@ -48,6 +51,17 @@ const InputWrapper = styled(Box)({
   marginBottom: "15px",
 });
 
+const DropzoneArea = styled(Box)({
+  border: '2px dashed #cccccc',
+  borderRadius: '4px',
+  padding: '20px',
+  textAlign: 'center',
+  cursor: 'pointer',
+  '&:hover': {
+    borderColor: '#999999',
+  },
+});
+
 const API_BASE_URL = "http://localhost:5000";
 
 const PlanForm = ({ plan, onClose, onSave }) => {
@@ -57,6 +71,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
     description: "",
     backgroundImage: "",
     isPro: false,
+    accentColor: "#000000",
     duration: { weeks: 1, daysPerWeek: 1 },
     weeks: [],
   });
@@ -68,6 +83,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
         ...plan,
         duration: plan.duration || { weeks: 1, daysPerWeek: 1 },
         weeks: plan.weeks || [],
+        accentColor: plan.accentColor || "#000000",
       });
     } else {
       setFormData({
@@ -76,6 +92,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
         description: "",
         backgroundImage: "",
         isPro: false,
+        accentColor: "#000000",
         duration: { weeks: 1, daysPerWeek: 1 },
         weeks: [],
       });
@@ -113,11 +130,23 @@ const PlanForm = ({ plan, onClose, onSave }) => {
 
   const handleWeekChange = (weekIndex, dayIndex, field, value) => {
     const updatedWeeks = [...formData.weeks];
-    updatedWeeks[weekIndex].days[dayIndex][field] = value;
+    if (field === "focusArea") {
+      updatedWeeks[weekIndex].days[dayIndex][field] = Array.isArray(value) ? value : [];
+    } else {
+      updatedWeeks[weekIndex].days[dayIndex][field] = value;
+    }
     setFormData((prevData) => ({
       ...prevData,
       weeks: updatedWeeks,
     }));
+  };
+
+  const calculateTotalTime = (exercises) => {
+    return exercises.reduce((total, exercise) => {
+      const duration = parseInt(exercise.duration) || 0;
+      const sets = parseInt(exercise.sets) || 1;
+      return total + (duration * sets) / 60;
+    }, 0);
   };
 
   const handleExerciseChange = (
@@ -129,6 +158,10 @@ const PlanForm = ({ plan, onClose, onSave }) => {
   ) => {
     const updatedWeeks = [...formData.weeks];
     updatedWeeks[weekIndex].days[dayIndex].exercises[exerciseIndex][field] = value;
+    
+    const totalTime = calculateTotalTime(updatedWeeks[weekIndex].days[dayIndex].exercises);
+    updatedWeeks[weekIndex].days[dayIndex].totalTime = `${Math.round(totalTime)} minutes`;
+
     setFormData((prevData) => ({
       ...prevData,
       weeks: updatedWeeks,
@@ -147,8 +180,8 @@ const PlanForm = ({ plan, onClose, onSave }) => {
           dayNumber: j + 1,
           exercises: [],
           level: '',
-          totalTime: '',
-          focusArea: ''
+          totalTime: '0 minutes',
+          focusArea: []
         });
       }
       newWeeks.push(week);
@@ -163,22 +196,89 @@ const PlanForm = ({ plan, onClose, onSave }) => {
     if (!plan) generateWeeks();
   }, [generateWeeks, plan]);
 
+  const onDrop = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setFormData((prevData) => ({
+        ...prevData,
+        backgroundImage: reader.result,
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: 'image/*',
+    multiple: false,
+  });
+
+  const compressImage = async (imageFile) => {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true
+    }
+    try {
+      const compressedFile = await imageCompression(imageFile, options);
+      return compressedFile;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting form with data:", formData); // Debugging log
+    console.log("Submitting form with data:", formData);
+  
+    let backgroundImageFile = null;
+    if (formData.backgroundImage && formData.backgroundImage.startsWith('data:image')) {
+      const response = await fetch(formData.backgroundImage);
+      const blob = await response.blob();
+      backgroundImageFile = new File([blob], "background.jpg", { type: "image/jpeg" });
+      
+      const compressedFile = await compressImage(backgroundImageFile);
+      if (compressedFile) {
+        backgroundImageFile = compressedFile;
+      }
+    }
+  
+    const formDataToSend = new FormData();
+    Object.keys(formData).forEach(key => {
+      if (key !== 'backgroundImage') {
+        formDataToSend.append(key, JSON.stringify(formData[key]));
+      }
+    });
+    formDataToSend.append('planData', JSON.stringify(formData));
+    if (backgroundImageFile) {
+      formDataToSend.append('backgroundImage', backgroundImageFile);
+    }
+  
     try {
       if (plan) {
-        await axios.patch(`${API_BASE_URL}/plans/${plan._id}`, formData);
+        await axios.patch(`${API_BASE_URL}/plans/${plan._id}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
       } else {
-        await axios.post(`${API_BASE_URL}/plans`, formData);
+        await axios.post(`${API_BASE_URL}/plans`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
       }
       onSave();
       onClose();
     } catch (error) {
       if (error.response && error.response.data) {
-        console.error("Error saving plan:", error.response.data); // More detailed error log
+        console.error("Error saving plan:", error.response.data);
       } else {
-        console.error("Error saving plan:", error); // Fallback error log
+        console.error("Error saving plan:", error);
       }
     }
   };
@@ -215,7 +315,22 @@ const PlanForm = ({ plan, onClose, onSave }) => {
         value={formData.backgroundImage}
         onChange={handleChange}
         fullWidth
+        margin="normal"
       />
+      <DropzoneArea {...getRootProps()}>
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <Typography>Drop the image here ...</Typography>
+        ) : (
+          <Typography>Drag 'n' drop an image here, or click to select an image</Typography>
+        )}
+      </DropzoneArea>
+
+      {formData.backgroundImage && (
+        <Box mt={2}>
+          <img src={formData.backgroundImage} alt="Background" style={{ maxWidth: '100%', maxHeight: '200px' }} />
+        </Box>
+      )}
       <FormControlLabel
         control={
           <Checkbox
@@ -231,6 +346,20 @@ const PlanForm = ({ plan, onClose, onSave }) => {
         }
         label="Is Pro Plan"
       />
+      <InputWrapper>
+        <MuiColorInput
+          name="accentColor"
+          label="Accent Color"
+          value={formData.accentColor}
+          onChange={(color) => 
+            setFormData((prevData) => ({
+              ...prevData,
+              accentColor: color
+            }))
+          }
+          fullWidth
+        />
+      </InputWrapper>
       <FormControl fullWidth>
         <InputLabel>Weeks</InputLabel>
         <Select
@@ -271,7 +400,8 @@ const PlanForm = ({ plan, onClose, onSave }) => {
                 <FormControl fullWidth>
                   <InputLabel>Focus Area</InputLabel>
                   <Select
-                    value={day.focusArea || ""}
+                    multiple
+                    value={Array.isArray(day.focusArea) ? day.focusArea : []}
                     onChange={(e) =>
                       handleWeekChange(
                         weekIndex,
@@ -319,126 +449,145 @@ const PlanForm = ({ plan, onClose, onSave }) => {
                 <TextField
                   label="Total Time"
                   value={day.totalTime}
-                  onChange={(e) =>
-                    handleWeekChange(
-                      weekIndex,
-                      dayIndex,
-                      "totalTime",
-                      e.target.value
-                    )
-                  }
+                  InputProps={{
+                    readOnly: true,
+                  }}
                   fullWidth
                 />
               </InputWrapper>
               {day.exercises &&
-                day.exercises.map((exercise, exerciseIndex) => (
-                  <SubSectionContainer key={exerciseIndex}>
-                    <InputWrapper>
-                      <FormControl fullWidth>
-                        <InputLabel>Exercise</InputLabel>
-                        <Select
-                          value={exercise.name}
-                          onChange={(e) =>
-                            handleExerciseChange(
-                              weekIndex,
-                              dayIndex,
-                              exerciseIndex,
-                              "name",
-                              e.target.value
-                            )
-                          }
-                          label="Exercise"
-                        >
-                          {exercises
-                            .filter(
-                              (ex) =>
-                                ex.bodyPart === day.focusArea &&
-                                ex.difficulty === day.level
-                            )
-                            .map((ex) => (
+                day.exercises.map((exercise, exerciseIndex) => {
+                  const filteredExercises = exercises.filter(ex => 
+                    day.focusArea.some(area => ex.bodyPart === area)
+                  );
+
+                  const sortedExercises = [...filteredExercises].sort((a, b) => 
+                    ["beginner", "intermediate", "advanced"].indexOf(a.difficulty) - 
+                    ["beginner", "intermediate", "advanced"].indexOf(b.difficulty)
+                  );
+
+                  return (
+                    <SubSectionContainer key={exerciseIndex}>
+                      <InputWrapper>
+                        <FormControl fullWidth>
+                          <InputLabel>Exercise</InputLabel>
+                          <Select
+                            value={exercise.name}
+                            onChange={(e) =>
+                              handleExerciseChange(
+                                weekIndex,
+                                dayIndex,
+                                exerciseIndex,
+                                "name",
+                                e.target.value
+                              )
+                            }
+                            label="Exercise"
+                          >
+                            {sortedExercises.map((ex) => (
                               <MenuItem key={ex._id} value={ex.name}>
-                                {ex.name}
+                                {ex.name} - {ex.difficulty}
                               </MenuItem>
                             ))}
-                        </Select>
-                      </FormControl>
-                    </InputWrapper>
-                    <InputWrapper>
-                      <TextField
-                        label="Duration"
-                        value={exercise.duration}
-                        onChange={(e) =>
-                          handleExerciseChange(
-                            weekIndex,
-                            dayIndex,
-                            exerciseIndex,
-                            "duration",
-                            e.target.value
-                          )
-                        }
-                        fullWidth
-                      />
-                    </InputWrapper>
-                    <InputWrapper>
-                      <TextField
-                        label="Reps"
-                        type="number"
-                        value={exercise.reps}
-                        onChange={(e) =>
-                          handleExerciseChange(
-                            weekIndex,
-                            dayIndex,
-                            exerciseIndex,
-                            "reps",
-                            Number(e.target.value)
-                          )
-                        }
-                        fullWidth
-                      />
-                    </InputWrapper>
-                    <InputWrapper>
-                      <FormControl fullWidth>
-                        <InputLabel>Type</InputLabel>
-                        <Select
-                          value={exercise.type}
+                          </Select>
+                        </FormControl>
+                      </InputWrapper>
+                      <InputWrapper>
+                        <TextField
+                          label="Duration (seconds)"
+                          type="number"
+                          value={exercise.duration}
                           onChange={(e) =>
                             handleExerciseChange(
                               weekIndex,
                               dayIndex,
                               exerciseIndex,
-                              "type",
+                              "duration",
                               e.target.value
                             )
                           }
-                          label="Type"
-                        >
-                          {[
-                            "strength",
-                            "cardio",
-                            "flexibility",
-                            "balance",
-                            "endurance",
-                            "HIIT",
-                            "circuit",
-                            "bodyweight",
-                            "resistance",
-                            "plyometric",
-                          ].map((type) => (
-                            <MenuItem key={type} value={type}>
-                              {type}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </InputWrapper>
-                  </SubSectionContainer>
-                ))}
+                          fullWidth
+                        />
+                      </InputWrapper>
+                      <InputWrapper>
+                        <TextField
+                          label="Sets"
+                          type="number"
+                          value={exercise.sets}
+                          onChange={(e) =>
+                            handleExerciseChange(
+                              weekIndex,
+                              dayIndex,
+                              exerciseIndex,
+                              "sets",
+                              e.target.value
+                            )
+                          }
+                          fullWidth
+                        />
+                      </InputWrapper>
+                      <InputWrapper>
+                        <TextField
+                          label="Reps"
+                          type="number"
+                          value={exercise.reps}
+                          onChange={(e) =>
+                            handleExerciseChange(
+                              weekIndex,
+                              dayIndex,
+                              exerciseIndex,
+                              "reps",
+                              Number(e.target.value)
+                            )
+                          }
+                          fullWidth
+                        />
+                      </InputWrapper>
+                      <InputWrapper>
+                        <FormControl fullWidth>
+                          <InputLabel>Type</InputLabel>
+                          <Select
+                            value={exercise.type}
+                            onChange={(e) =>
+                              handleExerciseChange(
+                                weekIndex,
+                                dayIndex,
+                                exerciseIndex,
+                                "type",
+                                e.target.value
+                              )
+                            }
+                            label="Type"
+                          >
+                            {[
+                              "strength",
+                              "cardio",
+                              "flexibility",
+                              "balance",
+                              "endurance",
+                              "HIIT",
+                              "circuit",
+                              "bodyweight",
+                              "resistance",
+                              "plyometric",
+                            ].map((type) => (
+                              <MenuItem key={type} value={type}>
+                                {type}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </InputWrapper>
+                    </SubSectionContainer>
+                  );
+                })}
               <Button
                 onClick={() => {
                   const updatedWeeks = [...formData.weeks];
                   updatedWeeks[weekIndex].days[dayIndex].exercises.push({
                     name: "",
                     duration: "",
+                    sets: 1,
                     reps: 0,
                     type: "",
                   });
