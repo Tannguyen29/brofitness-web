@@ -81,10 +81,6 @@ export const SearchInput = styled(InputBase)({
 export const FilterButton = styled(Button)({
   minWidth: 'unset',
   padding: '8px',
-  color: "#FD6300",
-  "&:hover" :{
-    backgroundColor: "rgba(253, 99, 0, 0.04)",
-  }
 });
 
 export const StyledTableHeaderCell = styled(TableCell)(({ theme }) => ({

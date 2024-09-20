@@ -74,17 +74,32 @@ const PlanForm = ({ plan, onClose, onSave }) => {
     accentColor: "#000000",
     duration: { weeks: 1, daysPerWeek: 1 },
     weeks: [],
+    targetAudience: {
+      experienceLevel: "",
+      fitnessGoal: "",
+      equipmentNeeded: "",
+      activityLevel: "",
+    },
   });
   const [exercises, setExercises] = useState([]);
 
   useEffect(() => {
     if (plan) {
-      setFormData({
+      console.log("Received plan:", plan);
+      const newFormData = {
         ...plan,
         duration: plan.duration || { weeks: 1, daysPerWeek: 1 },
         weeks: plan.weeks || [],
         accentColor: plan.accentColor || "#000000",
-      });
+        targetAudience: {
+          experienceLevel: plan.targetAudience.experienceLevels?.[0] || "",
+          fitnessGoal: plan.targetAudience.fitnessGoals?.[0] || "",
+          equipmentNeeded: plan.targetAudience.equipmentNeeded?.[0] || "",
+          activityLevel: plan.targetAudience.activityLevels?.[0] || "",
+        },
+      };
+      console.log("Setting form data:", newFormData);
+      setFormData(newFormData);
     } else {
       setFormData({
         title: "",
@@ -95,6 +110,12 @@ const PlanForm = ({ plan, onClose, onSave }) => {
         accentColor: "#000000",
         duration: { weeks: 1, daysPerWeek: 1 },
         weeks: [],
+        targetAudience: {
+          experienceLevel: "",
+          fitnessGoal: "",
+          equipmentNeeded: "",
+          activityLevel: "",
+        },
       });
     }
     fetchExercises();
@@ -124,6 +145,17 @@ const PlanForm = ({ plan, onClose, onSave }) => {
       duration: {
         ...prevData.duration,
         [name]: Number(value),
+      },
+    }));
+  };
+
+  const handleTargetAudienceChange = (field, value) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      targetAudience: {
+        ...prevData.targetAudience,
+        [field]: value,
+        [`${field}s`]: [value], 
       },
     }));
   };
@@ -158,7 +190,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
   ) => {
     const updatedWeeks = [...formData.weeks];
     updatedWeeks[weekIndex].days[dayIndex].exercises[exerciseIndex][field] = value;
-    
+
     const totalTime = calculateTotalTime(updatedWeeks[weekIndex].days[dayIndex].exercises);
     updatedWeeks[weekIndex].days[dayIndex].totalTime = `${Math.round(totalTime)} minutes`;
 
@@ -234,19 +266,19 @@ const PlanForm = ({ plan, onClose, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Submitting form with data:", formData);
-  
+
     let backgroundImageFile = null;
     if (formData.backgroundImage && formData.backgroundImage.startsWith('data:image')) {
       const response = await fetch(formData.backgroundImage);
       const blob = await response.blob();
       backgroundImageFile = new File([blob], "background.jpg", { type: "image/jpeg" });
-      
+
       const compressedFile = await compressImage(backgroundImageFile);
       if (compressedFile) {
         backgroundImageFile = compressedFile;
       }
     }
-  
+
     const formDataToSend = new FormData();
     Object.keys(formData).forEach(key => {
       if (key !== 'backgroundImage') {
@@ -257,7 +289,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
     if (backgroundImageFile) {
       formDataToSend.append('backgroundImage', backgroundImageFile);
     }
-  
+
     try {
       if (plan) {
         await axios.patch(`${API_BASE_URL}/plans/${plan._id}`, formDataToSend, {
@@ -351,7 +383,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
           name="accentColor"
           label="Accent Color"
           value={formData.accentColor}
-          onChange={(color) => 
+          onChange={(color) =>
             setFormData((prevData) => ({
               ...prevData,
               accentColor: color
@@ -359,6 +391,71 @@ const PlanForm = ({ plan, onClose, onSave }) => {
           }
           fullWidth
         />
+      </InputWrapper>
+      <Typography variant="h6">Target Audience</Typography>
+      <InputWrapper>
+        <FormControl fullWidth>
+          <InputLabel>Experience Level</InputLabel>
+          <Select
+            value={formData.targetAudience.experienceLevel}
+            onChange={(e) => handleTargetAudienceChange("experienceLevel", e.target.value)}
+            label="Experience Level"
+          >
+            {["beginner", "intermediate", "advanced"].map((level) => (
+              <MenuItem key={level} value={level}>
+                {level}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </InputWrapper>
+      <InputWrapper>
+        <FormControl fullWidth>
+          <InputLabel>Fitness Goal</InputLabel>
+          <Select
+            value={formData.targetAudience.fitnessGoal}
+            onChange={(e) => handleTargetAudienceChange("fitnessGoal", e.target.value)}
+            label="Fitness Goal"
+          >
+            {["loseWeight", "buildMuscle", "keepFit"].map((goal) => (
+              <MenuItem key={goal} value={goal}>
+                {goal}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </InputWrapper>
+      <InputWrapper>
+        <FormControl fullWidth>
+          <InputLabel>Equipment Needed</InputLabel>
+          <Select
+            value={formData.targetAudience.equipmentNeeded}
+            onChange={(e) => handleTargetAudienceChange("equipmentNeeded", e.target.value)}
+            label="Equipment Needed"
+          >
+            {["body weight", "dumbbell", "barbell"].map((equipment) => (
+              <MenuItem key={equipment} value={equipment}>
+                {equipment}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </InputWrapper>
+      <InputWrapper>
+        <FormControl fullWidth>
+          <InputLabel>Activity Level</InputLabel>
+          <Select
+            value={formData.targetAudience.activityLevel}
+            onChange={(e) => handleTargetAudienceChange("activityLevel", e.target.value)}
+            label="Activity Level"
+          >
+            {["sedentary", "moderate", "active"].map((level) => (
+              <MenuItem key={level} value={level}>
+                {level}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </InputWrapper>
       <FormControl fullWidth>
         <InputLabel>Weeks</InputLabel>
@@ -390,6 +487,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
           ))}
         </Select>
       </FormControl>
+
       {formData.weeks.map((week, weekIndex) => (
         <SectionContainer key={weekIndex}>
           <Typography variant="h6">Week {week.weekNumber}</Typography>
@@ -457,12 +555,14 @@ const PlanForm = ({ plan, onClose, onSave }) => {
               </InputWrapper>
               {day.exercises &&
                 day.exercises.map((exercise, exerciseIndex) => {
-                  const filteredExercises = exercises.filter(ex => 
+                  const selectedEquipment = formData.targetAudience.equipmentNeeded;
+                  const filteredExercises = exercises.filter(ex =>
+                    selectedEquipment.includes(ex.equipment) &&
                     day.focusArea.some(area => ex.bodyPart === area)
                   );
 
-                  const sortedExercises = [...filteredExercises].sort((a, b) => 
-                    ["beginner", "intermediate", "advanced"].indexOf(a.difficulty) - 
+                  const sortedExercises = [...filteredExercises].sort((a, b) =>
+                    ["beginner", "intermediate", "advanced"].indexOf(a.difficulty) -
                     ["beginner", "intermediate", "advanced"].indexOf(b.difficulty)
                   );
 
@@ -537,7 +637,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
                               dayIndex,
                               exerciseIndex,
                               "reps",
-                              Number(e.target.value)
+                              e.target.value
                             )
                           }
                           fullWidth
@@ -603,6 +703,7 @@ const PlanForm = ({ plan, onClose, onSave }) => {
           ))}
         </SectionContainer>
       ))}
+
       <StyledButton type="submit" variant="contained">
         {plan ? "Update" : "Add"} Plan
       </StyledButton>

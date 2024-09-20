@@ -16,10 +16,6 @@ import {
   Menu,
   MenuItem,
   TablePagination,
-  Popover,
-  List,
-  ListItem,
-  ListItemText,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -50,22 +46,13 @@ const Exercises = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
-  const [totalExercises, setTotalExercises] = useState(0);
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-  const [sortOrder, setSortOrder] = useState("name_asc");
 
-  const fetchExercises = useCallback(async (term, pageNum, rowsPerPageNum, sort) => {
+  const fetchExercises = useCallback(async (term) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/exercises`, {
-        params: { 
-          search: term,
-          page: pageNum + 1,
-          limit: rowsPerPageNum,
-          sort: sort
-        }
+        params: { search: term }
       });
-      setExercises(response.data.exercises);
-      setTotalExercises(response.data.total);
+      setExercises(response.data);
     } catch (error) {
       console.error("Error fetching exercises:", error);
     }
@@ -73,15 +60,15 @@ const Exercises = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedFetchExercises = useCallback(
-    debounce((term, pageNum, rowsPerPageNum, sort) => {
-      fetchExercises(term, pageNum, rowsPerPageNum, sort);
+    debounce((term) => {
+      fetchExercises(term);
     }, 300),
     [fetchExercises]
   );
 
   useEffect(() => {
-    debouncedFetchExercises(searchTerm, page, rowsPerPage, sortOrder);
-  }, [debouncedFetchExercises, searchTerm, page, rowsPerPage, sortOrder]);
+    debouncedFetchExercises(searchTerm);
+  }, [debouncedFetchExercises, searchTerm]);
 
   const handleAdd = () => {
     setSelectedExercise(null);
@@ -111,7 +98,7 @@ const Exercises = () => {
     if (window.confirm("Are you sure you want to delete this exercise?")) {
       try {
         await axios.delete(`${API_BASE_URL}/exercises/${id}`);
-        debouncedFetchExercises(searchTerm, page, rowsPerPage, sortOrder);
+        fetchExercises(searchTerm);
       } catch (error) {
         console.error("Error deleting exercise:", error);
       }
@@ -122,16 +109,16 @@ const Exercises = () => {
     if (window.confirm(`Are you sure you want to delete ${selectedItems.length} selected exercises?`)) {
       try {
         await Promise.all(selectedItems.map(id => axios.delete(`${API_BASE_URL}/exercises/${id}`)));
-        debouncedFetchExercises(searchTerm, page, rowsPerPage, sortOrder);
+        fetchExercises(searchTerm);
         setSelectedItems([]);
       } catch (error) {
         console.error("Error deleting selected exercises:", error);
       }
     }
   };
-  
+
   const handleSave = () => {
-    debouncedFetchExercises(searchTerm, page, rowsPerPage, sortOrder);
+    fetchExercises(searchTerm);
   };
 
   const handleMenuOpen = (event, id) => {
@@ -147,29 +134,6 @@ const Exercises = () => {
   const handleSearchChange = (event) => {
     const term = event.target.value;
     setSearchTerm(term);
-    setPage(0);
-  };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleFilterClick = (event) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
-
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
-  };
-
-  const handleSortChange = (newSortOrder) => {
-    setSortOrder(newSortOrder);
-    setFilterAnchorEl(null);
   };
 
   return (
@@ -201,34 +165,9 @@ const Exercises = () => {
                   </InputAdornment>
                 }
               />
-              <s.FilterButton onClick={handleFilterClick}>
+              <s.FilterButton>
                 <FilterListIcon />
               </s.FilterButton>
-              <Popover
-                open={Boolean(filterAnchorEl)}
-                anchorEl={filterAnchorEl}
-                onClose={handleFilterClose}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'right',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-              >
-                <List>
-                  <ListItem button onClick={() => handleSortChange('name_asc')}>
-                    <ListItemText primary="Sort A-Z" />
-                  </ListItem>
-                  <ListItem button onClick={() => handleSortChange('id_asc')}>
-                    <ListItemText primary="Oldest to Newest" />
-                  </ListItem>
-                  <ListItem button onClick={() => handleSortChange('id_desc')}>
-                    <ListItemText primary="Newest to Oldest" />
-                  </ListItem>
-                </List>
-              </Popover>
             </>
           )}
         </s.TableHeader>
@@ -254,57 +193,62 @@ const Exercises = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {exercises.map((exercise) => (
-              <s.StyledTableRow key={exercise._id}>
-                <s.StyledTableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedItems.includes(exercise._id)}
-                    onChange={() => handleSelectItem(exercise._id)}
-                  />
-                </s.StyledTableCell>
-                <s.StyledTableCell className="name-column">{exercise.name}</s.StyledTableCell>
-                <s.StyledTableCell className="bodypart-column">{exercise.bodyPart}</s.StyledTableCell>
-                <s.StyledTableCell className="equipment-column">{exercise.equipment}</s.StyledTableCell>
-                <s.StyledTableCell className="difficulty-column">{exercise.difficulty}</s.StyledTableCell>
-                <s.StyledTableCell className="target-column">{exercise.target}</s.StyledTableCell>
-                <s.StyledTableCell>
-                  {exercise.isBanned && (
-                    <Typography color="error">Banned</Typography>
-                  )}
-                  <IconButton onClick={(event) => handleMenuOpen(event, exercise._id)}>
-                    <MoreVertIcon />
-                  </IconButton>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={openMenuId === exercise._id}
-                    onClose={handleMenuClose}
-                  >
-                    <MenuItem onClick={() => {
-                      handleEdit(exercise);
-                      handleMenuClose();
-                    }}>
-                      Edit
-                    </MenuItem>
-                    <MenuItem onClick={() => {
-                      handleDelete(exercise._id);
-                      handleMenuClose();
-                    }}>
-                      Delete
-                    </MenuItem>
-                  </Menu>
-                </s.StyledTableCell>
-              </s.StyledTableRow>
-            ))}
+            {exercises
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((exercise) => (
+                <s.StyledTableRow key={exercise._id}>
+                  <s.StyledTableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedItems.includes(exercise._id)}
+                      onChange={() => handleSelectItem(exercise._id)}
+                    />
+                  </s.StyledTableCell>
+                  <s.StyledTableCell className="name-column">{exercise.name}</s.StyledTableCell>
+                  <s.StyledTableCell className="bodypart-column">{exercise.bodyPart}</s.StyledTableCell>
+                  <s.StyledTableCell className="equipment-column">{exercise.equipment}</s.StyledTableCell>
+                  <s.StyledTableCell className="difficulty-column">{exercise.difficulty}</s.StyledTableCell>
+                  <s.StyledTableCell className="target-column">{exercise.target}</s.StyledTableCell>
+                  <s.StyledTableCell>
+                    {exercise.isBanned && (
+                      <Typography color="error">Banned</Typography>
+                    )}
+                    <IconButton onClick={(event) => handleMenuOpen(event, exercise._id)}>
+                      <MoreVertIcon />
+                    </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={openMenuId === exercise._id}
+                      onClose={handleMenuClose}
+                    >
+                      <MenuItem onClick={() => {
+                        handleEdit(exercise);
+                        handleMenuClose();
+                      }}>
+                        Edit
+                      </MenuItem>
+                      <MenuItem onClick={() => {
+                        handleDelete(exercise._id);
+                        handleMenuClose();
+                      }}>
+                        Delete
+                      </MenuItem>
+                    </Menu>
+                  </s.StyledTableCell>
+                </s.StyledTableRow>
+              ))}
           </TableBody>
         </Table>
         <StyledTablePagination
           rowsPerPageOptions={[5, 10, 20]}
           component="div"
-          count={totalExercises}
+          count={exercises.length}
           rowsPerPage={rowsPerPage}
           page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+          onPageChange={(event, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
         />
       </s.StyledTableContainer>
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
