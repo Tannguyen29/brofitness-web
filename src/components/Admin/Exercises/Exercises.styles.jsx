@@ -4,7 +4,6 @@ import { Box, TableContainer, TableCell, TableRow, Button, InputBase } from '@mu
 
 export const StyledBox = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3),
-  marginRight: '100px',
 }));
 
 export const Container = styled('div')(({ theme }) => ({

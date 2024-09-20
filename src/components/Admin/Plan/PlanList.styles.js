@@ -3,7 +3,6 @@ import { Box, TableContainer, TableCell, TableRow, Button, InputBase } from '@mu
 
 export const StyledBox = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3),
-  marginRight: '100px',
 }));
 
 export const Container = styled('div')(({ theme }) => ({
@@ -39,12 +38,12 @@ export const StyledTableCell = styled(TableCell)(({ theme }) => ({
   '&.title-column': {
     width: '200px',
     maxWidth: '200px',
-    minWidth: '200px',
+    minWidth: '150px',
   },
   '&.subtitle-column': {
-    width: '250px',
+    width: '150px',
     maxWidth: '250px',
-    minWidth: '250px',
+    minWidth: '100px',
   },
   '&.duration-column': {
     width: '150px',

@@ -25,8 +25,8 @@ const AppContainer = styled.div`
 `;
 
 const ContentContainer = styled.div`
-  margin-left: 340px; // Match the width of the sidebar
-  padding: 64px 20px 20px; // Add top padding to account for the fixed header
+  margin-left: 18%;
+  padding: 64px 20px 20px; 
   flex-grow: 1;
 `;
 
