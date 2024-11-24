@@ -53,6 +53,12 @@ const PlanForm = ({ plan, onClose, onSave }) => {
     description: '',
     backgroundImage: '',
     isPro: false,
+    targetAudience: {
+      experienceLevels: ['beginner'],
+      fitnessGoals: ['keepFit'],
+      equipmentNeeded: ['body weight'],
+      activityLevels: ['moderate']
+    },
     duration: { weeks: 1, daysPerWeek: 1 },
     weeks: [],
   });
@@ -104,7 +110,17 @@ const PlanForm = ({ plan, onClose, onSave }) => {
 
   const handleExerciseChange = (weekIndex, dayIndex, exerciseIndex, field, value) => {
     const updatedWeeks = [...formData.weeks];
-    updatedWeeks[weekIndex].days[dayIndex].exercises[exerciseIndex][field] = value;
+    if (field === 'name') {
+      const selectedExercise = exercises.find(ex => ex.name === value);
+      updatedWeeks[weekIndex].days[dayIndex].exercises[exerciseIndex] = {
+        ...updatedWeeks[weekIndex].days[dayIndex].exercises[exerciseIndex],
+        name: value,
+        exerciseId: selectedExercise?._id,
+        gifUrl: selectedExercise?.gifUrl
+      };
+    } else {
+      updatedWeeks[weekIndex].days[dayIndex].exercises[exerciseIndex][field] = value;
+    }
     setFormData(prevData => ({
       ...prevData,
       weeks: updatedWeeks
@@ -113,21 +129,43 @@ const PlanForm = ({ plan, onClose, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting form with data:", formData);  // Debugging log
     try {
+      const formattedData = {
+        ...formData,
+        weeks: formData.weeks.map(week => ({
+          weekNumber: week.weekNumber,
+          days: week.days.map(day => ({
+            dayNumber: day.dayNumber,
+            exercises: day.exercises.map(exercise => {
+              const fullExercise = exercises.find(ex => ex.name === exercise.name);
+              return {
+                exerciseId: fullExercise?._id,
+                name: exercise.name,
+                duration: parseInt(exercise.duration) || 0,
+                sets: parseInt(exercise.sets) || 1,
+                reps: parseInt(exercise.reps) || 0,
+                type: exercise.type || 'exercise',
+                gifUrl: fullExercise?.gifUrl
+              };
+            }),
+            level: day.level || 'beginner',
+            totalTime: day.totalTime || '30',
+            focusArea: Array.isArray(day.focusArea) ? day.focusArea : [day.focusArea]
+          }))
+        }))
+      };
+
+      console.log("Submitting formatted data:", formattedData);
+
       if (plan) {
-        await axios.patch(`${API_BASE_URL}/plans/${plan._id}`, formData);
+        await axios.patch(`${API_BASE_URL}/plans/${plan._id}`, formattedData);
       } else {
-        await axios.post(`${API_BASE_URL}/plans`, formData);
+        await axios.post(`${API_BASE_URL}/plans`, formattedData);
       }
       onSave();
       onClose();
     } catch (error) {
-      if (error.response && error.response.data) {
-        console.error('Error saving plan:', error.response.data);  // More detailed error log
-      } else {
-        console.error('Error saving plan:', error);  // Fallback error log
-      }
+      console.error('Error details:', error.response?.data || error);
     }
   };
 
@@ -309,7 +347,13 @@ const PlanForm = ({ plan, onClose, onSave }) => {
               ))}
               <Button onClick={() => {
                 const updatedWeeks = [...formData.weeks];
-                updatedWeeks[weekIndex].days[dayIndex].exercises.push({ name: '', duration: '', reps: 0, type: '' });
+                updatedWeeks[weekIndex].days[dayIndex].exercises.push({
+                  name: '',
+                  duration: '0',
+                  sets: 1,
+                  reps: 0,
+                  type: 'exercise'
+                });
                 setFormData(prevData => ({
                   ...prevData,
                   weeks: updatedWeeks
