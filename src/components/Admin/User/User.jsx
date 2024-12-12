@@ -21,7 +21,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import * as s from "./User.styles";
 import { styled } from "@mui/material/styles";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://bfbackend.onrender.com";
 
 const StyledTablePagination = styled(TablePagination)`
   .MuiTablePagination-selectLabel,
